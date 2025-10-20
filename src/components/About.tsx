@@ -2,47 +2,64 @@ import { useEffect, useRef, useState } from 'react';
 
 const scrambleChars = '!<>-_\\/[]{}—=+*^?#@%&$';
 
-const DecryptText = ({ text, isDecrypting }: { text: string; isDecrypting: boolean }) => {
+const DecryptText = ({ text, isDecrypting, delay = 0 }: { text: string; isDecrypting: boolean; delay?: number }) => {
   const [displayText, setDisplayText] = useState('');
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
     if (!isDecrypting) {
+      // Show scrambled text initially
       setDisplayText(text.split('').map(() => scrambleChars[Math.floor(Math.random() * scrambleChars.length)]).join(''));
+      setIsComplete(false);
       return;
     }
 
-    if (currentIndex >= text.length) {
-      setDisplayText(text);
-      return;
-    }
+    // Start decryption after delay
+    const startTimeout = setTimeout(() => {
+      let currentChar = 0;
+      
+      const decryptInterval = setInterval(() => {
+        if (currentChar >= text.length) {
+          setDisplayText(text);
+          setIsComplete(true);
+          clearInterval(decryptInterval);
+          return;
+        }
 
-    const interval = setInterval(() => {
-      setDisplayText(prev => {
-        const chars = text.split('');
-        return chars.map((char, idx) => {
-          if (idx < currentIndex) {
-            return char;
-          } else if (idx === currentIndex) {
-            return scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
-          } else {
-            return scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+        // Scramble effect for current revealing character
+        let iterations = 0;
+        const scrambleInterval = setInterval(() => {
+          setDisplayText(() => {
+            const chars = text.split('');
+            return chars.map((char, idx) => {
+              if (idx < currentChar) {
+                return char; // Already revealed
+              } else if (idx === currentChar) {
+                if (iterations < 3) {
+                  return scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+                }
+                return char; // Reveal the actual character
+              } else {
+                return scrambleChars[Math.floor(Math.random() * scrambleChars.length)]; // Still scrambled
+              }
+            }).join('');
+          });
+
+          iterations++;
+          if (iterations >= 3) {
+            clearInterval(scrambleInterval);
+            currentChar++;
           }
-        }).join('');
-      });
-    }, 30);
+        }, 30);
+      }, 50);
 
-    const revealTimeout = setTimeout(() => {
-      setCurrentIndex(prev => prev + 1);
-    }, 50);
+      return () => clearInterval(decryptInterval);
+    }, delay);
 
-    return () => {
-      clearInterval(interval);
-      clearTimeout(revealTimeout);
-    };
-  }, [isDecrypting, currentIndex, text]);
+    return () => clearTimeout(startTimeout);
+  }, [isDecrypting, text, delay]);
 
-  return <span className="font-mono">{displayText}</span>;
+  return <span className="font-mono text-foreground">{isComplete ? text : displayText}</span>;
 };
 
 export const About = () => {
@@ -87,7 +104,7 @@ export const About = () => {
             {aboutTexts.map((text, idx) => (
               <p key={idx} className="text-lg leading-relaxed">
                 <span className="text-primary">&gt;</span>{' '}
-                <DecryptText text={text} isDecrypting={isVisible} />
+                <DecryptText text={text} isDecrypting={isVisible} delay={idx * 1000} />
               </p>
             ))}
             <div className="pt-6 flex flex-wrap gap-4 items-center justify-center">
