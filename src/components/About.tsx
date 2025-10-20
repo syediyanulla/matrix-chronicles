@@ -1,8 +1,59 @@
 import { useEffect, useRef, useState } from 'react';
 
+const scrambleChars = '!<>-_\\/[]{}—=+*^?#@%&$';
+
+const DecryptText = ({ text, isDecrypting }: { text: string; isDecrypting: boolean }) => {
+  const [displayText, setDisplayText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (!isDecrypting) {
+      setDisplayText(text.split('').map(() => scrambleChars[Math.floor(Math.random() * scrambleChars.length)]).join(''));
+      return;
+    }
+
+    if (currentIndex >= text.length) {
+      setDisplayText(text);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setDisplayText(prev => {
+        const chars = text.split('');
+        return chars.map((char, idx) => {
+          if (idx < currentIndex) {
+            return char;
+          } else if (idx === currentIndex) {
+            return scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+          } else {
+            return scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+          }
+        }).join('');
+      });
+    }, 30);
+
+    const revealTimeout = setTimeout(() => {
+      setCurrentIndex(prev => prev + 1);
+    }, 50);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(revealTimeout);
+    };
+  }, [isDecrypting, currentIndex, text]);
+
+  return <span className="font-mono">{displayText}</span>;
+};
+
 export const About = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+
+  const aboutTexts = [
+    "Experienced Full Stack Developer specializing in MERN stack, with expertise in responsive UIs, robust backend systems, and scalable solutions using React, JavaScript, Firebase, and SQL databases.",
+    "Architect of end-to-end web applications using React for dynamic front-end experiences and modern JavaScript technologies.",
+    "Specialized in building robust backend architectures and optimizing database performance for scalable web applications."
+  ];
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -25,9 +76,7 @@ export const About = () => {
     <section
       id="about"
       ref={sectionRef}
-      className={`min-h-screen flex items-center justify-center px-4 py-20 ${
-        isVisible ? 'animate-fade-in-up' : 'opacity-0'
-      }`}
+      className="min-h-screen flex items-center justify-center px-4 py-20"
     >
       <div className="max-w-4xl w-full">
         <h2 className="font-vt323 text-5xl md:text-7xl mb-12 text-center gradient-text">
@@ -35,15 +84,12 @@ export const About = () => {
         </h2>
         <div className="bg-card border border-border rounded-lg p-8 card-glow">
           <div className="space-y-6 text-foreground">
-            <p className="text-lg leading-relaxed">
-              <span className="text-primary">&gt;</span> Experienced Full Stack Developer specializing in MERN stack, with expertise in responsive UIs, robust backend systems, and scalable solutions using React, JavaScript, Firebase, and SQL databases.
-            </p>
-            <p className="text-lg leading-relaxed">
-              <span className="text-primary">&gt;</span> Architect of end-to-end web applications using React for dynamic front-end experiences and modern JavaScript technologies.
-            </p>
-            <p className="text-lg leading-relaxed">
-              <span className="text-primary">&gt;</span> Specialized in building robust backend architectures and optimizing database performance for scalable web applications.
-            </p>
+            {aboutTexts.map((text, idx) => (
+              <p key={idx} className="text-lg leading-relaxed">
+                <span className="text-primary">&gt;</span>{' '}
+                <DecryptText text={text} isDecrypting={isVisible} />
+              </p>
+            ))}
             <div className="pt-6 flex flex-wrap gap-4 items-center justify-center">
               <a
                 href="mailto:syediyanulla@gmail.com"
