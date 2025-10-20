@@ -22,28 +22,31 @@ export const Hero = () => {
 
   // Matrix Shuffle Effect for Name
   useEffect(() => {
-    if (!isShuffling) return;
-
+    let frame = 0;
+    const maxFrames = 40; // 2 seconds at 50ms intervals
+    const nameArray = name.split('');
+    
     const shuffleInterval = setInterval(() => {
-      const nameArray = name.split('');
+      frame++;
+      const revealedCount = Math.floor((frame / maxFrames) * nameArray.length);
+      
       const newDisplay = nameArray.map((char, index) => {
-        if (index < displayName.filter((c, i) => c === nameArray[i]).length) {
-          return char;
+        if (index < revealedCount) {
+          return char; // Reveal the correct character
         }
         return shuffleChars[Math.floor(Math.random() * shuffleChars.length)];
       });
+      
       setDisplayName(newDisplay);
+      
+      if (frame >= maxFrames) {
+        setDisplayName(nameArray);
+        setIsShuffling(false);
+        clearInterval(shuffleInterval);
+      }
     }, 50);
 
-    const resolveTimeout = setTimeout(() => {
-      setIsShuffling(false);
-      setDisplayName(name.split(''));
-    }, 2000);
-
-    return () => {
-      clearInterval(shuffleInterval);
-      clearTimeout(resolveTimeout);
-    };
+    return () => clearInterval(shuffleInterval);
   }, []);
 
   // Typewriter Effect for Bio
